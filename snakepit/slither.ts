@@ -3,6 +3,8 @@ import { GameMap } from '../src/utils';
 import { MessageType } from '../src/messages';
 import { GameSettings, Direction, RelativeDirection, TileType } from '../src/types';
 import type { GameStartingEventMessage, Message, SnakeDeadEventMessage } from '../src/types_messages';
+import { GameMapCanvas } from '../lib/debug';
+import palette from '../lib/palette';
 
 const allDirections = Object.values(Direction); // [Direction.Up, Direction.Down, Direction.Left, Direction.Right];
 
@@ -19,22 +21,30 @@ function getRandomItem<T>(array: T[]): T {
 export async function getNextMove(gameMap: GameMap): Promise<Direction> {
   const myHeadPosition = gameMap.playerSnake.headCoordinate; // Coordinate of my snake's head
   const possibleMoves = allDirections.filter((direction) => gameMap.playerSnake.canMoveInDirection(direction)); //Filters safe directions to move in
-
-  // If there are no safe moves, bad luck!
-  if (possibleMoves.length === 0) {
-    return Direction.Down;
-  }
+  let nextMove = Direction.Down;
+  let foundFood = false;
 
   // Go toward food if it's nearby
   for (const direction of possibleMoves) {
     const nextPosition = myHeadPosition.translateByDirection(direction); // Gets the next position of the snake
     if (gameMap.getTileType(nextPosition) === TileType.Food) {
-      return direction;
+      nextMove = direction;
+      foundFood = true;
+      break;
     }
   }
 
-  // Otherwise, choose a random direction
-  return getRandomItem(possibleMoves);
+  if (!foundFood && possibleMoves.length > 0) {
+    nextMove = getRandomItem(possibleMoves);
+  }
+  const canvas = new GameMapCanvas(gameMap);
+  canvas.tiles.set(
+    myHeadPosition.translateByDirection(nextMove).toPosition(gameMap.width, gameMap.height),
+    palette.green.dark.black,
+  );
+  canvas.paint();
+
+  return nextMove;
 }
 
 /**
