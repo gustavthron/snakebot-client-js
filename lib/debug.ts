@@ -15,6 +15,18 @@ export function timeGetNextMove(getNextMove: GetNextMoveFn): GetNextMoveFn {
   };
 }
 
+export function paceCheckGetNextMove(getNextMove: GetNextMoveFn): GetNextMoveFn {
+  let lastGameTick = -1;
+  return async function (gameMap) {
+    if (lastGameTick !== gameMap.gameTick - 1) {
+      console.warn('Out of pace');
+    }
+    const nextMove = await getNextMove(gameMap);
+    lastGameTick = gameMap.gameTick;
+    return nextMove;
+  };
+}
+
 export class GameMapCanvas {
   width: number;
   height: number;

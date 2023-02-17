@@ -180,13 +180,22 @@ export class Snake {
   direction: Direction;
   coordinates: Coordinate[];
   map: GameMap;
+  snakeInfo: SnakeInfo;
 
-  constructor(id: string, name: string, direction: Direction, coordinates: Coordinate[], map: GameMap) {
+  constructor(
+    id: string,
+    name: string,
+    direction: Direction,
+    coordinates: Coordinate[],
+    map: GameMap,
+    snakeInfo: SnakeInfo,
+  ) {
     this.id = id;
     this.name = name;
     this.direction = direction;
     this.coordinates = coordinates;
     this.map = map;
+    this.snakeInfo = snakeInfo;
   }
   /**
    * @param direction Desired direction to check
@@ -264,7 +273,7 @@ export class Snake {
         direction = Direction.Up;
       }
     }
-    return new Snake(id, name, direction, coordinates, map);
+    return new Snake(id, name, direction, coordinates, map, snakeInfo);
   }
 }
 
