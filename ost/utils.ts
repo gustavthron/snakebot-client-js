@@ -42,6 +42,15 @@ export function areOppositeDirections(direction1: Direction, direction2: Directi
   }
 }
 
+export function* getPossibleMoves(direction: Direction) {
+  for (const direction of allDirections) {
+    if (areOppositeDirections(direction, direction)) {
+      continue;
+    }
+    yield direction;
+  }
+}
+
 export function cartesianProduct<T>(sets: T[][]): T[][] {
   if (sets.length === 0) {
     return [];
@@ -141,10 +150,7 @@ export class GameMapUtil {
       const headCoordinate = snake.headCoordinate;
       const moveTiles: Tile[] = [];
       let foodCount = 0;
-      for (const direction of allDirections) {
-        if (areOppositeDirections(direction, snake.direction)) {
-          continue;
-        }
+      for (const direction of getPossibleMoves(snake.direction)) {
         try {
           const tile = this.getTileByCoordinate(headCoordinate.translateByDirection(direction));
           if (tile.tileType === TileType.Snake) {
@@ -251,5 +257,103 @@ export class GameMapUtil {
       }
     }
     return tiles;
+  }
+}
+
+export class WalkabilityUtil {
+  #gameMap: GameMap;
+  #walkability: Map<number, number>;
+
+  constructor(gameMap: GameMap, forwardTicks = 0) {
+    this.#gameMap = gameMap;
+    this.#walkability = new Map<number, number>(); // position -> probability
+    const snakesWillGrow = willSnakesGrow(gameMap);
+    for (const snake of gameMap.snakes.values()) {
+      if (snake.length === 0 || snake.id === gameMap.playerSnake.id) {
+        continue;
+      }
+      // next opponent move walkability
+      const snakeHeadCoordinate = snake.headCoordinate;
+      const moves = [];
+      let foodCount = 0;
+      for (const direction of getPossibleMoves(snake.direction)) {
+        const moveCoordinate = snakeHeadCoordinate.translateByDirection(direction);
+        let movePosition = 0;
+        try {
+          movePosition = moveCoordinate.toPosition(gameMap.width, gameMap.height);
+        } catch {
+          continue;
+        }
+        const tileType = gameMap.tiles.get(movePosition) ?? TileType.Empty;
+        if (tileType === TileType.Obstacle || tileType === TileType.Snake) {
+          // simple check for now
+          this.#walkability.set(movePosition, 0);
+          continue;
+        } else if (tileType === TileType.Food) {
+          foodCount++;
+        }
+        moves.push(movePosition);
+      }
+      const noMoveProbability = 1 - 1 / moves.length;
+      for (const movePosition of moves) {
+        const existingProbability = this.#walkability.get(movePosition) ?? 1;
+        this.#walkability.set(movePosition, existingProbability * noMoveProbability);
+      }
+      // tail walkability
+      const growthProbability = snakesWillGrow ? 1 : foodCount / moves.length;
+      const tailPosition = snake.coordinates.at(-1)!.toPosition(gameMap.width, gameMap.height);
+      const tailWalkability = isTailProtected(snake) ? 0 : 1;
+      if (growthProbability === 1) {
+        this.#walkability.set(tailPosition, tailWalkability);
+      } else {
+        this.#walkability.set(tailPosition, tailWalkability * growthProbability);
+        this.#walkability.set(
+          snake.coordinates.at(-2)!.toPosition(gameMap.width, gameMap.height),
+          tailWalkability * (1 - growthProbability),
+        );
+      }
+      // future opponent move walkability
+      for (let i = 0; i < forwardTicks; i++) {
+        for (const movePosition of moves) {
+          const newMoves = [];
+          const moveCoordinate = Coordinate.fromPosition(movePosition, gameMap.width);
+          for (const direction of getPossibleMoves(moveCoordinate.directionTo(snakeHeadCoordinate))) {
+            const newMoveCoordinate = moveCoordinate.translateByDirection(direction);
+            let newMovePosition = 0;
+            try {
+              newMovePosition = newMoveCoordinate.toPosition(gameMap.width, gameMap.height);
+            } catch {
+              continue;
+            }
+            const tileType = gameMap.tiles.get(newMovePosition) ?? TileType.Empty;
+            if (tileType === TileType.Obstacle || tileType === TileType.Snake) {
+              // simple check for now
+              this.#walkability.set(newMovePosition, 0);
+              continue;
+            }
+            newMoves.push(newMovePosition);
+          }
+          const newNoMoveProbability = (1 - 1 / newMoves.length) * this.#walkability.get(movePosition)!;
+          for (const newMove of newMoves) {
+            const existingProbability = this.#walkability.get(newMove) ?? 1;
+            this.#walkability.set(newMove, existingProbability * newNoMoveProbability);
+          }
+        }
+      }
+    }
+  }
+
+  getWalkability(position: number): number {
+    let walkability = this.#walkability.get(position);
+    if (walkability === undefined) {
+      const tileType = this.#gameMap.tiles.get(position) ?? TileType.Empty;
+      if (tileType === TileType.Obstacle || tileType === TileType.Snake) {
+        walkability = 0;
+      } else {
+        walkability = 1;
+      }
+      this.#walkability.set(position, walkability);
+    }
+    return walkability;
   }
 }
