@@ -180,13 +180,22 @@ export class Snake {
   direction: Direction;
   coordinates: Coordinate[];
   map: GameMap;
+  tailProtectedForGameTicks: number;
 
-  constructor(id: string, name: string, direction: Direction, coordinates: Coordinate[], map: GameMap) {
+  constructor(
+    id: string,
+    name: string,
+    direction: Direction,
+    coordinates: Coordinate[],
+    map: GameMap,
+    tailProtectedForGameTicks: number,
+  ) {
     this.id = id;
     this.name = name;
     this.direction = direction;
     this.coordinates = coordinates;
     this.map = map;
+    this.tailProtectedForGameTicks = tailProtectedForGameTicks;
   }
   /**
    * @param direction Desired direction to check
@@ -248,7 +257,7 @@ export class Snake {
   }
 
   static fromSnakeInfo(snakeInfo: SnakeInfo, mapWidth: number, map: GameMap) {
-    const { id, name, positions } = snakeInfo;
+    const { id, name, positions, tailProtectedForGameTicks } = snakeInfo;
     const coordinates = positions.map((position) => Coordinate.fromPosition(position, mapWidth));
     // Calculate the direction of the snake
     let direction = Direction.Up;
@@ -264,7 +273,7 @@ export class Snake {
         direction = Direction.Up;
       }
     }
-    return new Snake(id, name, direction, coordinates, map);
+    return new Snake(id, name, direction, coordinates, map, tailProtectedForGameTicks);
   }
 }
 
