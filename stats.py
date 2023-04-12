@@ -2,7 +2,7 @@ import subprocess
 import re
 from collections import defaultdict
 
-num_runs = 4
+num_runs = 20
 winners = defaultdict(int)
 winner_per_game = []
 delayed_moves_per_game = []
@@ -17,7 +17,9 @@ for i in range(num_runs):
             "start",
             "--",
             "-s",
-            "snakepit/mini",
+            "snakepit/mini2",
+            "-n",
+            "mini2",
             # "-h",
             # "http://localhost:8080",
             "-sp",
