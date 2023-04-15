@@ -13,7 +13,7 @@ import type { GameStartingEventMessage, Message, SnakeDeadEventMessage } from '.
 // } as Console;
 
 const DEPTH = 3;
-const FLOODFILL_LIMIT = 200;
+const FLOODFILL_LIMIT = 150;
 
 const allDirections = [Direction.Up, Direction.Down, Direction.Left, Direction.Right];
 
@@ -372,10 +372,26 @@ export async function getNextMove(gameMap: GameMap) {
   // // Otherwise, pick a random move out of the best moves
   // const randomBestMove = bestMoves[Math.floor(Math.random() * bestMoves.length)];
   // console.log(`%%%%%Tick: ${gameTick}, Moving: ${randomBestMove}, Score: ${bestScore}, Best moves: ${bestMoves}, manhattanDist: ${bestMoves.map(move => playerHead.translateByDirection(move).manhattanDistanceTo(closestSnakeHead))}`);
-  // return randomBestMove;
+  // return randomBestMove;o
 
-  console.log(`Moving: ${bestMoves[0]}, Score: ${bestScore}, Best moves: ${bestMoves}`);
-  return bestMoves[0];
+  if (bestMoves.length === 0) return bestMoves[0];
+  bestScore = 0;
+  let okayMove = bestMoves[0];
+  for (const move of bestMoves) {
+    const possibleRemovedTail = applyMove(gameMap, move, playerId);
+    const head = gameMap.playerSnake.headCoordinate;
+    const score = getAvailableSpace(gameMap, head, 99999);
+    undoMove(gameMap, possibleRemovedTail, playerId);
+    if (score > bestScore) {
+      bestScore = score;
+      okayMove = move;
+    }
+  }
+  console.log(`Moving: ${okayMove}, Score: ${bestScore}, Best moves: ${bestMoves}`);
+  return okayMove;
+
+  // console.log(`Moving: ${bestMoves[0]}, Score: ${bestScore}, Best moves: ${bestMoves}`);
+  // return bestMoves[0];
 
   // const closeMove = bestMoves.reduce((a, b) => {
   //     const aDist = playerHead.translateByDirection(a).euclidianDistanceTo(closestSnakeHead);
