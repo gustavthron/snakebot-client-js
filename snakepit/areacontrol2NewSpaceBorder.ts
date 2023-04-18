@@ -402,7 +402,7 @@ function aStar(gameMap: GameMap, start: number, goal: number, firstDirections?: 
 export async function getNextMove(gameMap: GameMap) {
   const { gameTick, playerId, playerSnake, snakes } = gameMap;
 
-  console.log(`\ngameTick: ${gameTick}`);
+  //console.log(`\ngameTick: ${gameTick}`);
 
   // Sort snakes closest to player
   const playerHead = playerSnake.headCoordinate;
@@ -419,11 +419,11 @@ export async function getNextMove(gameMap: GameMap) {
   const closestSnake = snakesArr[1];
   const closestSnakeHead = closestSnake.headCoordinate;
 
-  console.log('closestSnake:', closestSnake.name);
+  //console.log('closestSnake:', closestSnake.name);
 
   const possibleMoves = getPossibleMoves(gameMap, playerId);
   if (possibleMoves.length === 0) {
-    console.log('No possible moves');
+    //console.log('No possible moves');
     return Direction.Down;
   }
 
@@ -435,14 +435,14 @@ export async function getNextMove(gameMap: GameMap) {
     return aHead.manhattanDistanceTo(closestSnakeHead) - bHead.manhattanDistanceTo(closestSnakeHead);
   });
 
-  console.log('possibleMoves:', possibleMoves);
+  //console.log('possibleMoves:', possibleMoves);
 
   let bestScore = -Infinity;
   let bestMoves: Direction[] = [];
   for (const move of possibleMoves) {
     const possibleRemovedTail = applyMove(gameMap, move, playerId);
     const score = minimax(gameMap, DEPTH, playerId, closestSnake.id, false, -Infinity, Infinity, gameTick);
-    console.log(`Possible Move: ${move} Score: ${score}`);
+    //console.log(`Possible Move: ${move} Score: ${score}`);
     undoMove(gameMap, possibleRemovedTail, playerId);
     if (score > bestScore) {
       bestScore = score;
@@ -452,7 +452,7 @@ export async function getNextMove(gameMap: GameMap) {
     }
   }
 
-  console.log('bestMoves:', bestMoves);
+  //console.log('bestMoves:', bestMoves);
 
   if (bestMoves.length === 1) return bestMoves[0];
   bestScore = 0;
@@ -487,7 +487,7 @@ export async function getNextMove(gameMap: GameMap) {
     const atBoarder = xCoord === 0 || xCoord === gameMap.width - 1 || yCoord === 0 || yCoord === gameMap.height - 1;
 
     undoMove(gameMap, possibleRemovedTail, playerId);
-    console.log(`Okay Move: ${move} Score: ${score}`);
+    //console.log(`Okay Move: ${move} Score: ${score}`);
     fullyTrapped = fullyTrapped && trapped;
     const moveScore = { move, score, trapped, atBoarder };
     scores.push(moveScore);
@@ -497,7 +497,7 @@ export async function getNextMove(gameMap: GameMap) {
     }
   }
   if (fullyTrapped) {
-    console.log('FullyTrapped! - avoid borders');
+    //console.log('FullyTrapped! - avoid borders');
     let movesAwayFromBorder = scores.filter((score1) => !score1.atBoarder);
     if (movesAwayFromBorder.length > 0) {
       movesAwayFromBorder = movesAwayFromBorder.sort((score1, score2) => score2.score - score1.score);
@@ -506,7 +506,7 @@ export async function getNextMove(gameMap: GameMap) {
       }
     }
   }
-  console.log(`Moving: ${okayMove}, Score: ${bestScore}, Best moves: ${bestMoves}`);
+  //console.log(`Moving: ${okayMove}, Score: ${bestScore}, Best moves: ${bestMoves}`);
   return okayMove;
 }
 
