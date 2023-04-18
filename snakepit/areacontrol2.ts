@@ -112,11 +112,12 @@ function getAvailableSpace(
   // Flood fill available space
   const visited = new Set<string>();
   const queue: { coord: Coordinate; distance: number }[] = [];
-  for (const direction of getPossibleMoves(gameMap, snakeId)) {
+  for (const direction of allDirections) {
     const neighbor = head.translateByDirection(direction);
-    queue.push({ coord: neighbor, distance: 1 });
+    if (!neighbor.isOutOfBounds(gameMap.width, gameMap.height) && gameMap.isTileFree(neighbor)) {
+      queue.push({ coord: neighbor, distance: 1 });
+    }
   }
-
   let availableSpace = 0;
   while (queue.length > 0 && availableSpace < floodfillLimit) {
     const { coord: current, distance: distance } = queue.shift()!;
@@ -405,7 +406,7 @@ export async function getNextMove(gameMap: GameMap) {
   // Filter out the player snake
   const opponentSnakes = Array.from(snakesArr.values()).filter((snake) => snake.id !== playerId);
 
-  for (let snake of opponentSnakes) {
+  for (const snake of opponentSnakes) {
     getAvailableSpace(gameMap, snake.coordinates[0], snake.id, floodFillMap, snakeSpacesMap, true, 999999);
   }
   for (const move of bestMoves) {

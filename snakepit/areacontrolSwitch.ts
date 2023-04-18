@@ -3,7 +3,7 @@ import { GameMap, Coordinate } from '../src/utils2';
 import { MessageType } from '../src/messages';
 import { GameSettings, Direction, RelativeDirection, TileType } from '../src/types';
 import type { GameStartingEventMessage, Message, SnakeDeadEventMessage } from '../src/types_messages';
-import { getNextMoveMini } from './mini2';
+import { getNextMoveMini } from './mini2Switch';
 
 // // Disable logging
 // console = {
@@ -278,7 +278,6 @@ export async function getNextMove(gameMap: GameMap) {
   const playerSnake = gameMap.playerSnake;
   const enemySnakes = [...gameMap.snakes.values()].sort((snake1, snake2) => snake2.points - snake1.points);
   if (enemySnakes[0].id === playerSnake.id || enemySnakes[1].id === playerSnake.id) {
-    console.log('In lead');
     const aliveEnemySnakes = enemySnakes.filter((snake) => snake.coordinates.length !== 0);
     if (aliveEnemySnakes.length <= 2) {
       console.log('AGGERSIVE - changing to mini snake');
