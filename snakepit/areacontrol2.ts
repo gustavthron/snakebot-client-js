@@ -129,10 +129,13 @@ function getAvailableSpace(
     const prevClosestSnake = floodfillMap.get(currPos);
     if (gameMap.isTileFree(current) && (prevClosestSnake === undefined || prevClosestSnake.distance > distance)) {
       availableSpace++;
-      if (updateFloodfillMap && prevClosestSnake !== undefined) {
-        snakesSpacesMap.set(prevClosestSnake.id, snakesSpacesMap.get(prevClosestSnake.id)! - 1);
+      if (updateFloodfillMap) {
+        // Decrease available space of previous closest snake if it exists (since it is no longer the closest)
+        if (prevClosestSnake !== undefined) {
+          snakesSpacesMap.set(prevClosestSnake.id, snakesSpacesMap.get(prevClosestSnake.id)! - 1);
+        }
+        floodfillMap.set(currPos, { id: snakeId, distance });
       }
-      floodfillMap.set(currPos, { id: snakeId, distance });
       for (const direction of allDirections) {
         const neighbor = current.translateByDirection(direction);
         if (gameMap.isTileFree(neighbor) && !neighbor.isOutOfBounds(gameMap.width, gameMap.height)) {
@@ -391,7 +394,7 @@ export async function getNextMove(gameMap: GameMap) {
 
   console.log('bestMoves:', bestMoves);
 
-  if (bestMoves.length === 0) return bestMoves[0];
+  if (bestMoves.length === 1) return bestMoves[0];
   bestScore = 0;
   let okayMove = bestMoves[0];
   const floodFillMap: Map<number, { id: string; distance: number }> = new Map();
@@ -408,7 +411,17 @@ export async function getNextMove(gameMap: GameMap) {
   for (const move of bestMoves) {
     const possibleRemovedTail = applyMove(gameMap, move, playerId);
     const head = gameMap.playerSnake.headCoordinate;
-    const score = getAvailableSpace(gameMap, head, gameMap.playerId, floodFillMap, snakeSpacesMap, false, 999999);
+    let score = getAvailableSpace(gameMap, head, gameMap.playerId, floodFillMap, snakeSpacesMap, false, 999999);
+
+    // Ugly hack to prevent the snake from wasting its own available space (best way would be to simulate an extra step or somehow detect that moving this way u would lose e.g. half of the space)
+    // Get coordinate one step ahead
+    const oneStepAhead = head.translateByDirection(move);
+    if (oneStepAhead.isOutOfBounds(gameMap.width, gameMap.height) || !gameMap.isTileFree(oneStepAhead)) {
+      // If the coordinate is not free, the snake lose some its available space
+      console.log(`Moving ${move} would waste space! Penalizing (-1)`);
+      score -= 1;
+    }
+
     undoMove(gameMap, possibleRemovedTail, playerId);
     console.log(`Okay Move: ${move} Score: ${score}`);
     if (score > bestScore) {
